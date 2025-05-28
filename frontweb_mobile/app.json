@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "image-app",
+    "slug": "snack-81e46aac-424e-4d0f-8ed3-6ee499355534",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.anonymous.snack81e46aac424e4d0f8ed36ee499355534"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "description": "This Snack provides the complete Expo tutorial example. "
+  }
+}
