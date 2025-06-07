@@ -124,7 +124,109 @@ export default function Comment() {
         }
     };
 
+    const getMarkerColor = (db) => {
+        if (db >= -30) return 'red';
+        if (db >= -50) return 'orange';
+        if (db >= -70) return 'yellow';
+        return 'green';
+    };
 
+
+
+    const startLiveUpdates = async () => {
+        const permission = await Audio.requestPermissionsAsync();
+        if (permission.status !== 'granted') {
+            Alert.alert('Permission denied', 'Microphone access is required.');
+            return;
+        }
+
+        await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+        });
+
+        // Connect to MQTT only once
+        if (!mqttClient) {
+            mqttClient = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+            mqttClient.on('connect', () => {
+                console.log("📡 MQTT connected for live updates");
+            });
+            mqttClient.on('error', (err) => {
+                console.error("❌ MQTT connection error:", err);
+            });
+            mqttClient.on('close', () => {
+                console.log("🔌 MQTT disconnected");
+            });
+        }
+
+        const interval = setInterval(async () => {
+            try {
+                const { recording } = await Audio.Recording.createAsync({
+                    android: { extension: '.wav' },
+                    ios: { extension: '.wav' },
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                await recording.stopAndUnloadAsync();
+                const uri = recording.getURI();
+
+                const base64Audio = await FileSystem.readAsStringAsync(uri, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+
+                const response = await fetch(`http://${LOCAL_IP}:5000/analyze-audio`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: 'recording.wav', data: base64Audio }),
+                });
+
+                const result = await response.json();
+
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') throw new Error("No location permission");
+
+                const loc = await Location.getCurrentPositionAsync({});
+                const newLocation = {
+                    latitude: loc.coords.latitude,
+                    longitude: loc.coords.longitude,
+                };
+
+                const payload = JSON.stringify({
+                    photoId,
+                    userId: user?.id,
+                    db: parseFloat(result.db),
+                    location: newLocation,
+                    timestamp: new Date().toISOString(),
+                });
+
+                mqttClient?.publish('audio/decibel', payload);
+                console.log("📤 Published to MQTT:", payload);
+            } catch (err) {
+                console.error('Live update error:', err);
+            }
+        }, 6000);
+
+        setIntervalId(interval);
+        setRecordingActive(true);
+    };
+
+
+    const stopLiveUpdates = () => {
+        if (intervalId) {
+            clearInterval(intervalId);
+            setIntervalId(null);
+        }
+        if (mqttClient) {
+            mqttClient.publish('audio/decibel', JSON.stringify({
+                photoId,
+                status: 'offline',
+                timestamp: new Date().toISOString()
+            }));
+            mqttClient.end();
+            mqttClient = null;
+        }
+        setRecordingActive(false);
+    };
 
     if (!photo) return <Text style={{ padding: 20 }}>Loading...</Text>;
 
