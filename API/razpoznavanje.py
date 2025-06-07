@@ -90,3 +90,91 @@ def augment_and_save_image(image_path, output_dir, num_augmented=200):
         save_path = os.path.join(output_dir, f"augmented_{i}.jpg")
         cv2.imwrite(save_path, augmented)
         print(f"Saved augmented image: {save_path}")
+
+N = 32
+def create_model(output_bias=None):
+    model = tf.keras.Sequential()
+    model.add(layers.Input(shape=(64, 64, 3)))
+
+    for i in range(3):
+        filters = N * (2 ** i)
+        model.add(layers.Conv2D(filters, (3, 3), padding='same', activation='relu'))
+        model.add(layers.BatchNormalization())
+        model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+
+    model.add(layers.Flatten())
+    model.add(layers.Dense(128, activation='relu'))
+    model.add(layers.Dropout(0.5))
+
+    # Binary classification output with optional bias
+    if output_bias is not None:
+        bias_initializer = initializers.Constant(output_bias)
+    else:
+        bias_initializer = 'zeros'
+
+    model.add(layers.Dense(1, activation='sigmoid', bias_initializer=bias_initializer))
+
+    return model
+
+# Function to display image
+def display_image(image, title=None):
+    plt.figure()
+    rgb_image = image[..., ::-1]  # BGR to RGB
+    plt.imshow(rgb_image)
+    plt.axis('off')
+    if title:
+        plt.title(title)
+    plt.show()
+
+
+def register(username):
+    data_dir = os.path.join(os.getcwd(), 'face_data')
+    # Load the face dataset
+    images, labels = load_face_data(data_dir,username, max_negatives=1000)
+    # Split into train/test/val sets
+    train_images, test_images, train_labels, test_labels = train_test_split(images, labels, test_size=0.2,
+                                                                            stratify=labels)
+    train_images, val_images, train_labels, val_labels = train_test_split(train_images, train_labels, test_size=0.25,
+                                                                          stratify=train_labels)
+
+    print(f'Train shape: {train_images.shape}')
+    print(f'Validation shape: {val_images.shape}')
+    print(f'Test shape: {test_images.shape}')
+
+    # Optional: Show example
+    display_image(train_images[0], 'Sample face')
+
+    # Augment training data
+    augmented_train_images, augmented_train_labels = augment_images(train_images, train_labels)
+
+    class_weights = class_weight.compute_class_weight(
+        class_weight='balanced',
+        classes=np.unique(train_labels),
+        y=train_labels
+    )
+    class_weights_dict = dict(enumerate(class_weights))
+
+    pos = np.sum(train_labels == 1)
+    neg = np.sum(train_labels == 0)
+    initial_bias = np.log((pos + 1e-7) / (neg + 1e-7))
+    # Train the model
+    model = create_model(output_bias=initial_bias)
+    model.build((None, 64, 64, 3))
+    model.compile(
+        optimizer='adam',
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    model.fit(augmented_train_images, augmented_train_labels, epochs=10, validation_data=(val_images, val_labels), class_weight=class_weights_dict)
+
+    # Evaluate on training set
+    ucna_loss, ucna_accuracy = model.evaluate(augmented_train_images, augmented_train_labels)
+    print(f"Ucna natancnost: {ucna_accuracy:.3f}")
+
+    # Evaluate on validation set
+    test_loss, test_accuracy = model.evaluate(val_images, val_labels)
+    print(f"Testna natancnost: {test_accuracy:.3f}")
+    # Save
+    model.save(f'models/{username}_model.keras')
+
+

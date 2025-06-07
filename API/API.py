@@ -1,7 +1,50 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import os
 import numpy as np
 import cv2
 import base64
+import tempfile
 import librosa
+import json
+import socket
+
+import razpoznavanje
+
+import requests
+import traceback
+
+# === Flask App ===
+app = Flask(__name__)
+CORS(app)
+
+@app.route('/')
+def home():
+    return "Flask API is running. Use POST /upload to send an image."
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'file' not in request.files:
+        print('⚠️ No file in request.files')
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Empty filename'}), 400
+
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+
+    if size == 0:
+        return jsonify({'error': 'Uploaded file is empty'}), 400
+
+    result = process_image(file)
+    if result:
+        return jsonify({'status': result}), 200
+    else:
+        return jsonify({'error': 'Model exists or is being created'}), 400
+
 @app.route('/analyze-audio', methods=['POST'])
 def analyze_audio():
     try:
