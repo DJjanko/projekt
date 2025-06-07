@@ -144,6 +144,38 @@ def analyze_audio():
         print(f"[ERROR] {str(e)}")
         return jsonify({ "error": "Failed to analyze audio." }), 500
 
+# === New Route: Login Challenge ===
+@app.route('/login-challenge', methods=['POST'])
+def login_challenge():
+    try:
+        data = request.json
+        username = data.get('username')
+
+        if not username:
+            return jsonify({ 'error': 'No username provided' }), 400
+
+        topic = f'login_challenge/{username}'
+        mqtt_web_client.publish(topic, payload='please_scan_face')
+
+        print(f"📡 Sent login challenge to {topic}")
+
+        return jsonify({ 'status': 'challenge sent' })
+
+    except Exception as e:
+        print(f"[ERROR] Failed to send login challenge: {str(e)}")
+        return jsonify({ 'error': 'Failed to send login challenge' }), 500
+
+# === MQTT Subscriber Setup ===
+def on_connect(client, userdata, flags, rc, properties=None):
+    if rc == 0:
+        #print(" Connected to MQTT broker.")
+        client.subscribe("audio/decibel")
+        client.subscribe("presence/+")  # Wildcard for all presence messages
+    else:
+        print(f" Failed to connect. Code: {rc}")
+
+active_subscribers = set()
+
 def on_message(client, userdata, msg):
     try:
         topic = msg.topic
