@@ -27,7 +27,7 @@ export default function Photos() {
     const navigation = useNavigation();
 
     const serverUrl = `http://${LOCAL_IP}:3001`; // ⬅️ Your local IP
-    
+
 
     // === Photos loading logic ===
     useFocusEffect(
