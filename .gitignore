@@ -27,3 +27,6 @@ Thumbs.db
 
 # Test and coverage outputs
 coverage/
+
+.idea/
+
