@@ -183,7 +183,28 @@ module.exports = {
                 }
             });
     },
+    changePassword: async function (req, res) {
+        const userId = req.session.userId;
+        const { oldPassword, newPassword } = req.body;
 
+        if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+        try {
+            const user = await UserModel.findById(userId);
+            if (!user) return res.status(404).json({ error: "User not found" });
+
+            const isMatch = await bcrypt.compare(oldPassword, user.password);
+            if (!isMatch) return res.status(400).json({ error: "Incorrect current password" });
+
+            user.password = newPassword; // will be hashed by pre-save hook
+            await user.save();
+
+            res.json({ message: "Password updated successfully" });
+        } catch (err) {
+            console.error('Change password error:', err); // 👈 log the real error
+            res.status(500).json({ error: "Server error" });
+        }
+    },
 
     logout: function(req, res, next){
         if(req.session){
