@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
- export const UserContext = createContext({
-     user: null,
-     setUserContext: () => {}
- });
+export const UserContext = createContext({
+    user: null,
+    setUserContext: () => {}
+});
