@@ -177,4 +177,40 @@ def register(username):
     # Save
     model.save(f'models/{username}_model.keras')
 
+def preprocess_image(img):
+    img = cv2.resize(img, (64, 64))
+    img = img.astype(np.float32) / 255.0  #Normalize to match training
+    img = np.expand_dims(img, axis=0)
+    return img
 
+def predict_image(model_path, image):
+    if not os.path.exists(model_path):
+        print(f"Model file not found: {model_path}")
+        return False
+
+    model = tf.keras.models.load_model(model_path)
+    img = preprocess_image(image)
+    prediction = model.predict(img)[0][0]
+    print(f"Prediction score: {prediction:.5f}")
+
+    if prediction > 0.5:  # Threshold for confidence
+        print("Face match: access granted.")
+        return True
+    else:
+        print("Face mismatch: access denied.")
+        return False
+
+
+
+def login(username, image):
+    model_path = f'models/{username}_model.keras'
+    if(predict_image(model_path, image)):
+        return True
+    else:
+        return False
+
+
+if __name__ == "__main__":
+    #register('janko')
+    img = cv2.imread("face_data/janko/janko.jpg")
+    login('janko', img)
