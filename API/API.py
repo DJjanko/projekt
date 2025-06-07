@@ -45,6 +45,7 @@ def check_login(file):
     img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     return razpoznavanje.login(username, img)
 
+#register
 @app.route('/')
 def home():
     return "Flask API is running. Use POST /upload to send an image."
