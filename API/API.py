@@ -72,6 +72,7 @@ def upload():
     else:
         return jsonify({'error': 'Model exists or is being created'}), 400
 
+#Login API
 @app.route('/login', methods=['POST'])
 def login_user():
     if 'file' not in request.files:
