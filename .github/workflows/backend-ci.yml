@@ -31,9 +31,13 @@ jobs:
           cd backend
           npm install
 
+      - name: Restore MongoDB dump
+        run: |
+          mongorestore --host 127.0.0.1 --port 27017 --db vaja6 dump/vaja6
+
       - name: Run tests
         env:
-          MONGO_URL: mongodb://127.0.0.1/vaja6  # or whatever your backend expects
+          MONGO_URL: mongodb://127.0.0.1/vaja6
         run: |
           cd backend
           npm test
