@@ -200,7 +200,7 @@ def on_message(client, userdata, msg):
                 active_subscribers.discard(user_id)
                 #print(f" {user_id} went offline.")
 
-            #print(f" Active subscribers: {len(active_subscribers)}")
+            print(f" Active subscribers: {len(active_subscribers)}")
             return
 
         # === Handle Photo Updates ===
