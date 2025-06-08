@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app');  // adjust the path depending on where your app.js is
+const app = require('../app');
 
 describe('User Login', () => {
     it('should fail login with wrong credentials', (done) => {
@@ -7,8 +7,9 @@ describe('User Login', () => {
             .post('/users/login')
             .send({ username: 'nonexistent', password: 'wrongpass' })
             .expect(401)
-            .end(done);
+            .end((err, res) => {
+                if (err) return done(err);
+                done();
+            });
     });
-
-    // You can add more tests for successful login, etc.
 });
