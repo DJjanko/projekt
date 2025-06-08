@@ -1,1 +1,1 @@
-"C:\Program Files\mosquitto\mosquitto.exe" -c "D:\Desktop\projekt\mqtt\mosquitto.conf" -v
+"C:\Program Files\mosquitto\mosquitto.exe" -c "E:\Download\testPROJ\projekt\mqtt\mosquitto.conf" -v

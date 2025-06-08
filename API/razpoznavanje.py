@@ -156,7 +156,7 @@ def register(username):
     print(f'Test shape: {test_images.shape}')
 
     # Optional: Show example
-    display_image(train_images[0], 'Sample face')
+    # display_image(train_images[0], 'Sample face')
 
     # Augment training data
     augmented_train_images, augmented_train_labels = augment_images(train_images, train_labels)
