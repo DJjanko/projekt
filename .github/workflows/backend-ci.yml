@@ -30,6 +30,11 @@ jobs:
         run: |
           cd backend
           npm install
+      - name: Install MongoDB Database Tools
+        run: |
+          wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2004-x86_64-100.9.4.tgz
+          tar -xvzf mongodb-database-tools-*-100.9.4.tgz
+          sudo cp mongodb-database-tools-*/bin/* /usr/local/bin/
 
       - name: Restore MongoDB dump
         run: |
