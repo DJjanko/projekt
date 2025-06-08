@@ -1,7 +1,8 @@
 {
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "expo start",
+    "start": "npm run generate-env && expo start",
+    "generate-env": "node generate-env.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web"
@@ -23,6 +24,7 @@
     "expo-media-library": "~17.1.6",
     "expo-status-bar": "~2.2.3",
     "express": "^5.1.0",
+    "mqtt": "^5.13.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.2",
