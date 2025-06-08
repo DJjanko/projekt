@@ -14,6 +14,10 @@ import razpoznavanje
 import requests
 import traceback
 
+# MQTT Imports
+from threading import Thread
+from paho.mqtt import client as mqtt_client
+
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -44,6 +48,7 @@ mqtt_web_client = mqtt_client.Client(client_id='flask-web-login', transport="web
 mqtt_web_client.connect(MQTT_BROKER, MQTT_PORT)
 mqtt_web_client.loop_start()
 
+# === Image Processing ===
 def process_image(file):
     print(f"Received file: {file.filename}")
     username, _ = os.path.splitext(file.filename)
@@ -71,7 +76,7 @@ def check_login(file):
     img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     return razpoznavanje.login(username, img)
 
-#register
+# === Routes ===
 @app.route('/')
 def home():
     return "Flask API is running. Use POST /upload to send an image."
@@ -99,7 +104,6 @@ def upload():
     else:
         return jsonify({'error': 'Model exists or is being created'}), 400
 
-#Login API
 @app.route('/login', methods=['POST'])
 def login_user():
     if 'file' not in request.files:
@@ -121,6 +125,7 @@ def login_user():
         return jsonify({'status': result}), 200
     else:
         return jsonify({'error': 'Access denied'}), 400
+
 @app.route('/analyze-audio', methods=['POST'])
 def analyze_audio():
     try:
@@ -184,6 +189,20 @@ def on_message(client, userdata, msg):
         #print(f" Topic: {topic}")
         #print(f" Payload: {payload_raw}")
 
+        # === Handle Presence Messages ===
+        if topic.startswith("presence/"):
+            user_id = topic.split("/")[1]
+
+            if payload_raw == 'online':
+                active_subscribers.add(user_id)
+                #print(f" {user_id} is now online.")
+            elif payload_raw == '':
+                active_subscribers.discard(user_id)
+                #print(f" {user_id} went offline.")
+
+            #print(f" Active subscribers: {len(active_subscribers)}")
+            return
+
         # === Handle Photo Updates ===
         payload = json.loads(payload_raw)
 
@@ -227,5 +246,7 @@ def run_mqtt_listener():
 
 # === Start MQTT Listener in Background ===
 Thread(target=run_mqtt_listener, daemon=True).start()
+
+# === Start Flask ===
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
