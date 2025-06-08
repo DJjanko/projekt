@@ -13,9 +13,16 @@ after((done) => {
 
 describe('User Login', () => {
     it('should fail login with wrong credentials', async () => {
-        await request(app)  // 🟢 notice: directly pass app, no server.listen!
+        await request(app)
             .post('/users/login')
             .send({ username: 'nonexistent', password: 'wrongpass' })
             .expect(401);
+    });
+
+    it('should succeed login with correct credentials', async () => {
+        await request(app)
+            .post('/users/login')
+            .send({ username: 'klada1', password: '123' })  // ✅ <-- replace with your real test user
+            .expect(200);
     });
 });
