@@ -22,7 +22,46 @@ function Photos() {
 
         fetchPhotos();
 
+        // 🚫 If user is not logged in → do not connect MQTT
+        if (!user) {
+            console.log('⚠️ User not logged in → skipping MQTT connection');
+            return;
+        }
 
+        // ✅ User is logged in → proceed with MQTT
+        const client = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+        const userId = user.username;
+
+        client.on('connect', () => {
+            console.log('🟢 MQTT connected');
+            client.publish(`presence/${userId}`, 'online', { retain: true });
+            client.subscribe('audio/decibel');
+        });
+
+        client.on('message', (topic, message) => {
+            try {
+                const update = JSON.parse(message.toString());
+                console.log('📥 MQTT update received:', update);
+
+                setPhotos(prevPhotos =>
+                    prevPhotos.map(photo =>
+                        photo._id === update.photoId
+                            ? { ...photo, db: update.db, location: update.location }
+                            : photo
+                    )
+                );
+            } catch (e) {
+                console.error('⚠️ Failed to parse MQTT message:', e);
+            }
+        });
+
+        mqttClientRef.current = client;
+
+        return () => {
+            client.publish(`presence/${userId}`, '', { retain: true });
+            client.end();
+            console.log('🔌 MQTT disconnected');
+        };
     }, [user]);
 
     return (
