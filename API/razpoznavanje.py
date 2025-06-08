@@ -1,4 +1,17 @@
 import os
+import numpy as np
+from sklearn.model_selection import train_test_split
+import cv2
+import tensorflow as tf
+from sklearn.utils import class_weight
+from tensorflow.keras import layers
+from tensorflow.keras import initializers
+from tensorflow.keras.callbacks import TensorBoard
+import matplotlib.pyplot as plt
+import random
+
+
+
 #load faces
 def load_face_data(data_dir, username, max_negatives=1000):
     images = []
@@ -91,6 +104,7 @@ def augment_and_save_image(image_path, output_dir, num_augmented=200):
         cv2.imwrite(save_path, augmented)
         print(f"Saved augmented image: {save_path}")
 
+# Custom model
 N = 32
 def create_model(output_bias=None):
     model = tf.keras.Sequential()
@@ -176,6 +190,8 @@ def register(username):
     print(f"Testna natancnost: {test_accuracy:.3f}")
     # Save
     model.save(f'models/{username}_model.keras')
+
+
 
 def preprocess_image(img):
     img = cv2.resize(img, (64, 64))
