@@ -1,30 +1,19 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app'); // your Express app (WITHOUT app.listen inside!)
-
-let server;
-
-before((done) => {
-    // Start server before tests
-    server = app.listen(3002, () => {
-        console.log('Test server running');
-        done();
-    });
-});
+const app = require('../app'); // your Express app (without app.listen)
 
 after((done) => {
-    // Close server and DB after tests
-    server.close(() => {
-        mongoose.connection.close(false, () => {
-            console.log('Test server and DB closed');
-            done();
-        });
+    // Close DB after tests
+    mongoose.connection.close(false, () => {
+        console.log('MongoDB connection closed');
+        done();
+        process.exit(0);
     });
 });
 
 describe('User Login', () => {
     it('should fail login with wrong credentials', async () => {
-        await request(server)
+        await request(app)  // 🟢 notice: directly pass app, no server.listen!
             .post('/users/login')
             .send({ username: 'nonexistent', password: 'wrongpass' })
             .expect(401);
