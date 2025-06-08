@@ -28,6 +28,44 @@ export default function Photos() {
 
     const serverUrl = `http://${LOCAL_IP}:3001`; // ⬅️ Your local IP
 
+    // === MQTT useEffect ===
+    useEffect(() => {
+        if (user && user.username) {
+            console.log('✅ Photos.js: Connecting MQTT for user:', user.username);
+
+            const client = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+            mqttClient.current = client;
+
+            client.on('connect', () => {
+                console.log('✅ Photos.js MQTT connected');
+                const challengeTopic = `login_challenge/${user.username}`;
+                client.subscribe(challengeTopic);
+                console.log(`📡 Photos.js subscribed to ${challengeTopic}`);
+            });
+
+            client.on('message', async (topic, message) => {
+                console.log(`Photos.js received:`, topic, message);
+
+                if (topic === `login_challenge/${user.username}` && message.toString() === 'please_scan_face') {
+                    console.log('➡️ Redirecting to 2FA screen');
+                    navigation.navigate('2FA');
+                    // DO NOT send POST /login here!
+                    // DO NOT publish login_response here!
+                }
+            });
+
+            client.on('error', (err) => {
+                console.error('❌ Photos.js MQTT error:', err);
+            });
+
+            return () => {
+                if (client) {
+                    console.log('🔌 Photos.js disconnecting MQTT');
+                    client.end();
+                }
+            };
+        }
+    }, [user]);
 
     // === Photos loading logic ===
     useFocusEffect(

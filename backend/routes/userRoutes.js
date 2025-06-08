@@ -1,44 +1,22 @@
-var mongoose = require('mongoose');
-var bcrypt = require('bcrypt');
-var Schema   = mongoose.Schema;
+var express = require('express');
+var router = express.Router();
+var userController = require('../controllers/userController.js');
 
-var userSchema = new Schema({
-    'username' : String,
-    'password' : String,
-    'email' : String
-});
 
-userSchema.pre('save', function(next){
-    var user = this;
-    bcrypt.hash(user.password, 10, function(err, hash){
-        if(err){
-            return next(err);
-        }
-        user.password = hash;
-        next();
-    });
-});
+router.get('/', userController.list);
+//router.get('/register', userController.showRegister);
+//router.get('/login', userController.showLogin);
+router.get('/profile', userController.profile);
+router.get('/logout', userController.logout);
+router.get('/:id', userController.show);
 
-userSchema.statics.authenticate = function(username, password, callback){
-    User.findOne({username: username})
-        .exec(function(err, user){
-            if(err){
-                return callback(err);
-            } else if(!user) {
-                var err = new Error("User not found.");
-                err.status = 401;
-                return callback(err);
-            }
-            bcrypt.compare(password, user.password, function(err, result){
-                if(result === true){
-                    return callback(null, user);
-                } else{
-                    return callback();
-                }
-            });
+router.post('/', userController.create);
+router.post('/login', userController.login);
+router.post('/:id/change-password', userController.changePassword);
 
-        });
-}
+router.put('/:id', userController.update);
 
-var User = mongoose.model('user', userSchema);
-module.exports = User;
+
+router.delete('/:id', userController.remove);
+
+module.exports = router;
