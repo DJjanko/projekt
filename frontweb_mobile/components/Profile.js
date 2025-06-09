@@ -56,7 +56,7 @@ export default function Profile() {
 
         const loadProfile = async () => {
             try {
-                const res = await fetch(`${BACKEND_URL}:3001/users/profile`, {
+                const res = await fetch(`${BACKEND_URL}/users/profile`, {
                     credentials: 'include',
                 });
                 const data = await res.json();
