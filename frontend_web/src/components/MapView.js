@@ -164,7 +164,7 @@ function MapView() {
     }, []);
 
     useEffect(() => {
-        const client = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+        const client = mqtt.connect(`ws://localhost:9001`);
 
         client.on('connect', () => {
             console.log('🟢 MQTT connected (MapView)');

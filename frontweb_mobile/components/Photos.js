@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Photo from './Photo';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 
 import mqtt from 'mqtt';
 import { Buffer } from 'buffer';
@@ -26,14 +26,14 @@ export default function Photos() {
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation();
 
-    const serverUrl = `http://${LOCAL_IP}:3001`; // ⬅️ Your local IP
+    const serverUrl = `${BACKEND_URL}`; // ⬅️ Your local IP
 
     // === MQTT useEffect ===
     useEffect(() => {
         if (user && user.username) {
             console.log('✅ Photos.js: Connecting MQTT for user:', user.username);
 
-            const client = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+            const client = mqtt.connect(`${MQTT_URL}`);
             mqttClient.current = client;
 
             client.on('connect', () => {

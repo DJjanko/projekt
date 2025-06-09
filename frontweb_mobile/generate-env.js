@@ -1,26 +1,59 @@
-const dgram = require('dgram');
 const fs = require('fs');
-console.log("generate")
-function getCurrentIPAddress() {
-    return new Promise((resolve, reject) => {
-        const socket = dgram.createSocket('udp4');
-        socket.connect(80, '8.8.8.8', () => {
-            const address = socket.address();
-            socket.close();
-            resolve(address.address);
+const http = require('http');
+
+
+
+function fetchTunnels(callback) {
+    http.get('http://127.0.0.1:4043/api/tunnels', (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => callback(null, JSON.parse(data)));
+    }).on('error', (err) => callback(err));
+}
+
+function tryFetchWithRetry(retries = 10, delay = 1000) {
+    fetchTunnels((err, tunnelsData) => {
+        if (err) {
+            if (retries > 0) {
+                console.log(`Waiting for ngrok... (${retries} retries left)`);
+                setTimeout(() => tryFetchWithRetry(retries - 1, delay), delay);
+            } else {
+                console.error('Error fetching tunnels after retries:', err);
+                process.exit(1);
+            }
+            return;
+        }
+
+        let backendURL = '';
+        let apiURL = '';
+        let mqttURL = '';
+
+        tunnelsData.tunnels.forEach(tunnel => {
+            const addr = tunnel.config.addr;
+            if (addr === 'http://localhost:3001') {
+                backendURL = tunnel.public_url;
+            } else if (addr === 'http://localhost:5000') {
+                apiURL = tunnel.public_url;
+            } else if (addr === 'http://localhost:9001') {
+                mqttURL = tunnel.public_url.replace('https', 'wss'); // MQTT must be wss
+            }
         });
-        socket.on('error', (err) => {
-            reject(err);
-        });
+
+        if (!backendURL || !apiURL || !mqttURL) {
+            console.error('Could not detect all required tunnels. Exiting.');
+            process.exit(1);
+        }
+
+        const content = `
+export const BACKEND_URL = '${backendURL}';
+export const API_URL = '${apiURL}';
+export const MQTT_URL = '${mqttURL}';
+`;
+
+        fs.writeFileSync('ipConfig.js', content.trim() + '\n');
+        console.log('Generated ipConfig.js');
     });
 }
 
-(async () => {
-    try {
-        const ip = await getCurrentIPAddress();
-        console.log(`Your IPv4 Address is: ${ip}`);
-        fs.writeFileSync('ipConfig.js', `export const LOCAL_IP = '${ip}';\n`);
-    } catch (err) {
-        console.error('Error getting IP address:', err);
-    }
-})();
+tryFetchWithRetry();
+

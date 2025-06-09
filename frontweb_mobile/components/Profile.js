@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { UserContext } from '../userContext';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 
 export default function Profile() {
     const { user } = useContext(UserContext);
@@ -25,7 +25,7 @@ export default function Profile() {
         }
 
         try {
-            const res = await fetch(`http://${LOCAL_IP}:3001/users/${user._id}`, {
+            const res = await fetch(`${BACKEND_URL}/users/${user._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -56,7 +56,7 @@ export default function Profile() {
 
         const loadProfile = async () => {
             try {
-                const res = await fetch(`http://${LOCAL_IP}:3001/users/profile`, {
+                const res = await fetch(`${BACKEND_URL}:3001/users/profile`, {
                     credentials: 'include',
                 });
                 const data = await res.json();

@@ -5,7 +5,7 @@ import { UserContext } from '../userContext';
 import * as ImagePicker from 'expo-image-picker';
 import mqtt from 'mqtt';
 import { Buffer } from 'buffer';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 global.Buffer = global.Buffer || Buffer;
 
 export default function Login() {
@@ -26,7 +26,7 @@ export default function Login() {
                 return;
             }
 
-            const res = await fetch(`http://${LOCAL_IP}:3001/users/login`, {
+            const res = await fetch(`${BACKEND_URL}/users/login`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
@@ -45,7 +45,7 @@ export default function Login() {
                     name: `${username}.jpg`,
                 });
 
-                const faceRes = await fetch(`http://${LOCAL_IP}:5000/login`, {
+                const faceRes = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     body: formData,
                 });

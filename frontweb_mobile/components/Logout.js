@@ -1,7 +1,7 @@
 import { useEffect, useContext } from 'react';
 import { UserContext } from '../userContext';
 import { useNavigation } from '@react-navigation/native';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 
 export default function Logout() {
     const { setUserContext } = useContext(UserContext);
@@ -11,7 +11,7 @@ export default function Logout() {
         const logout = async () => {
             setUserContext(null);
             try {
-                await fetch(`http://${LOCAL_IP}:3001/users/logout`, {
+                await fetch(`${BACKEND_URL}/users/logout`, {
                     credentials: 'include',
                 });
             } catch (err) {

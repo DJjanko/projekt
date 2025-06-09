@@ -8,7 +8,7 @@ import { UserContext } from '../userContext';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 
 
 export default function AddPhotoBase64() {
@@ -106,7 +106,7 @@ export default function AddPhotoBase64() {
         }
 
         try {
-            const res = await fetch(`http://${LOCAL_IP}:3001/photos/base64`, {
+            const res = await fetch(`${BACKEND_URL}/photos/base64`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -189,7 +189,7 @@ export default function AddPhotoBase64() {
                 encoding: FileSystem.EncodingType.Base64,
             });
 
-            const response = await fetch(`http://${LOCAL_IP}:5000/analyze-audio`, {
+            const response = await fetch(`${API_URL}/analyze-audio`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filename: 'recording.wav', data: base64Audio }),

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 export default function MapScreen() {
     const [photos, setPhotos] = useState([]);
     const [loading, setLoading] = useState(true);
-    const serverUrl = `http://${LOCAL_IP}:3001`;
+    const serverUrl = `${BACKEND_URL}`;
 
     useEffect(() => {
         const fetchPhotos = async () => {

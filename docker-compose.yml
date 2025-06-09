@@ -1,61 +1,57 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  mongo:
-    image: mongo:4.4
-    container_name: mongo
-    restart: always
-    ports:
-      - "27017:27017"
-
-  mqtt:
-    build: ./mqtt
-    container_name: mqtt
-    restart: always
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
     ports:
       - "1883:1883"
       - "9001:9001"
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - ./dump:/dump 
 
   backend:
     build: ./backend
     container_name: backend
-    restart: always
-    ports:
-      - "3001:3001"
-    environment:
-      - MONGO_URL=mongodb://mongo:27017/vaja6
+    network_mode: host
     depends_on:
       - mongo
 
-  api:
-    build: ./API
-    container_name: api
-    restart: always
-    ports:
-      - "5000:5000"
-    depends_on:
-      - mqtt
-      - backend
-
-  frontend_web:
+  frontend-web:
     build: ./frontend_web
-    container_name: frontend_web
-    restart: always
+    container_name: frontend-web
     ports:
       - "3000:3000"
     depends_on:
       - backend
-      - api
 
-  frontend_mobile:
-    build: ./frontweb_mobile
-    container_name: frontweb_mobile
-    restart: always
+  flask-api:
+    build: ./API
+    container_name: flask-face-api
     ports:
-      - "8081:8081"
+      - "5000:5000"
+    depends_on:
+      - mosquitto
+
+  frontweb-mobile:
+    build: ./frontweb_mobile
+    container_name: frontweb-mobile
+    network_mode: "host"
+    stdin_open: true
+    tty: true
     depends_on:
       - backend
-      - api
+    
 
 volumes:
   mongo-data:
+

@@ -5,7 +5,7 @@ import { UserContext } from '../userContext';
 import * as ImagePicker from 'expo-image-picker';
 import mqtt from 'mqtt';
 import { Buffer } from 'buffer';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 global.Buffer = global.Buffer || Buffer;
 
 export default function TwoFA() {
@@ -17,7 +17,7 @@ export default function TwoFA() {
         if (user && user.username) {
             console.log('✅ 2FA.js Connecting MQTT for user:', user.username);
 
-            const client = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+            const client = mqtt.connect(`${MQTT_URL}`);
             mqttClient.current = client;
 
             client.on('connect', () => {
@@ -73,7 +73,7 @@ export default function TwoFA() {
                 name: `${user.username}.jpg`,
             });
 
-            const faceRes = await fetch(`http://${LOCAL_IP}:5000/login`, {
+            const faceRes = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 body: formData,
             });

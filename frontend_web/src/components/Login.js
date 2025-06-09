@@ -15,7 +15,7 @@ function Login() {
 
     useEffect(() => {
         // Connect to MQTT broker
-        const client = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+        const client = mqtt.connect(`ws://localhost:9001`);
         mqttClient.current = client;
 
         client.on('connect', () => {
@@ -41,7 +41,7 @@ function Login() {
 
         try {
             // 1️⃣ Step 1: Basic username/password auth first
-            const res = await fetch(`http://${LOCAL_IP}:3001/users/login`, {
+            const res = await fetch(`http://localhost:3001/users/login`, {
                 method: "POST",
                 credentials: "include",
                 headers: { 'Content-Type': 'application/json' },

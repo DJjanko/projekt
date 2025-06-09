@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 
 export default function Photo({ photo }) {
     const navigation = useNavigation();
@@ -10,7 +10,7 @@ export default function Photo({ photo }) {
         navigation.navigate('Comment', { photoId: photo._id });
     };
 
-    const imageUrl = `http://${LOCAL_IP}:3001${photo.path}`; // ← Replace with your IP
+    const imageUrl = `${BACKEND_URL}${photo.path}`;
 
     return (
         <TouchableOpacity onPress={handlePress} style={styles.card}>

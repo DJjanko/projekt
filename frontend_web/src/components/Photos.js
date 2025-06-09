@@ -12,7 +12,7 @@ function Photos() {
     useEffect(() => {
         const fetchPhotos = async () => {
             try {
-                const res = await fetch(`http://${LOCAL_IP}:3001/photos`);
+                const res = await fetch(`http://localhost:3001/photos`);
                 const data = await res.json();
                 setPhotos(data);
             } catch (err) {
@@ -29,7 +29,7 @@ function Photos() {
         }
 
         // ✅ User is logged in → proceed with MQTT
-        const client = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+        const client = mqtt.connect(`ws://localhost:9001`);
         const userId = user.username;
 
         client.on('connect', () => {

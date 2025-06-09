@@ -11,7 +11,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 import mqtt from 'mqtt';
 import { Buffer } from 'buffer';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 global.Buffer = global.Buffer || Buffer;
 
 export default function Comment() {
@@ -28,7 +28,7 @@ export default function Comment() {
     let [mqttClient, setMqttClient] = useState(null);
 
 
-    const serverUrl = `http://${LOCAL_IP}:3001`;
+    const serverUrl = `${BACKEND_URL}`;
 
     useEffect(() => {
         let isMounted = true;
@@ -43,11 +43,23 @@ export default function Comment() {
                 const commentsData = await commentsRes.json();
 
                 const commentsArray = Array.isArray(commentsData) ? commentsData : [];
-                const commentsWithUsers = await Promise.all(commentsArray.map(async (comment) => {
-                    const userRes = await fetch(`${serverUrl}/users/${comment.postedBy}`);
-                    const userData = await userRes.json();
-                    return { ...comment, username: userData.username };
-                }));
+		const commentsWithUsers = await Promise.all(commentsArray.map(async (comment) => {
+    		let username = "Anonymous";
+
+    		if (typeof comment.postedBy === 'object' && comment.postedBy !== null && comment.postedBy.username) {
+        	username = comment.postedBy.username;
+    		} else if (typeof comment.postedBy === 'string') {
+        	try {
+            		const userRes = await fetch(`${serverUrl}/users/${comment.postedBy}`);
+            		const userData = await userRes.json();
+            		username = userData.username || "Unknown";
+        } catch (err) {
+            console.error('Error loading user for comment:', err);
+        }
+    }
+
+    return { ...comment, username };
+}));
 
                 if (isMounted) setComments(commentsWithUsers);
             } catch (err) {
@@ -147,7 +159,7 @@ export default function Comment() {
 
         // Connect to MQTT only once
         if (!mqttClient) {
-            mqttClient = mqtt.connect(`ws://${LOCAL_IP}:9001`);
+            mqttClient = mqtt.connect(`${MQTT_URL}`);
             mqttClient.on('connect', () => {
                 console.log("📡 MQTT connected for live updates");
             });
@@ -174,7 +186,7 @@ export default function Comment() {
                     encoding: FileSystem.EncodingType.Base64,
                 });
 
-                const response = await fetch(`http://${LOCAL_IP}:5000/analyze-audio`, {
+                const response = await fetch(`${API_URL}/analyze-audio`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ filename: 'recording.wav', data: base64Audio }),

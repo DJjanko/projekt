@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { LOCAL_IP } from '../ipConfig.js';
+import { BACKEND_URL, API_URL, MQTT_URL } from '../ipConfig';
 
 export default function Register() {
     const navigation = useNavigation();
@@ -57,7 +57,7 @@ export default function Register() {
 
     const handleRegister = async () => {
         try {
-            const res = await fetch(`http://${LOCAL_IP}:3001/users`, {
+            const res = await fetch(`${BACKEND_URL}/users`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
@@ -77,7 +77,7 @@ export default function Register() {
                     });
 
                     console.log('📡 Uploading image to /upload...');
-                    const uploadRes = await fetch(`http://${LOCAL_IP}:5000/upload`, {
+                    const uploadRes = await fetch(`${API_URL}/upload`, {
                         method: 'POST',
                         body: formData,
                     });

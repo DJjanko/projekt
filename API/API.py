@@ -13,15 +13,46 @@ import razpoznavanje
 
 import requests
 import traceback
+import time
 
 # MQTT Imports
 from threading import Thread
 from paho.mqtt import client as mqtt_client
 
+# === MQTT Configuration ===
+MQTT_BROKER = os.getenv('MQTT_BROKER', 'mosquitto')
+MQTT_PORT = 9001
+MQTT_TOPIC = 'audio/decibel'
+MQTT_CLIENT_ID = 'flask-subscriber'
+
+# === MQTT Publisher for Web Login ===
+mqtt_web_client = mqtt_client.Client(client_id='flask-web-login', transport="websockets")
+
+for attempt in range(10):
+    try:
+        print(f"Attempting MQTT connect to {MQTT_BROKER}:{MQTT_PORT}, attempt {attempt + 1}/10")
+        mqtt_web_client.connect(MQTT_BROKER, MQTT_PORT)
+        print("✅ MQTT connected (publisher)")
+        break
+    except Exception as e:
+        print(f"❌ MQTT connect failed: {e}")
+        time.sleep(2)
+else:
+    print("❌ Could not connect to MQTT after 10 attempts → exiting.")
+    exit(1)
+
+mqtt_web_client.loop_start()
+
+# === Backend URL configuration ===
+# IMPORTANT → use your ngrok backend URL here:
+BACKEND_URL = 'https://686f-178-79-79-37.ngrok-free.app'
+
+print(f"💻 Using BACKEND_URL: {BACKEND_URL}")
+
+# === Get Local IP (for print only)
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        # This doesn't actually send data, it's just for OS to select interface
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
     except Exception:
@@ -29,24 +60,13 @@ def get_local_ip():
     finally:
         s.close()
     return ip
+
 LOCAL_IP = get_local_ip()
 print(" Local IP detected:", LOCAL_IP)
-
 
 # === Flask App ===
 app = Flask(__name__)
 CORS(app)
-
-# === MQTT Configuration ===
-MQTT_BROKER = LOCAL_IP  # IP of your Mosquitto broker
-MQTT_PORT = 9001              # WebSocket port
-MQTT_TOPIC = 'audio/decibel'
-MQTT_CLIENT_ID = 'flask-subscriber'
-
-# === MQTT Publisher for Web Login ===
-mqtt_web_client = mqtt_client.Client(client_id='flask-web-login', transport="websockets")
-mqtt_web_client.connect(MQTT_BROKER, MQTT_PORT)
-mqtt_web_client.loop_start()
 
 # === Image Processing ===
 def process_image(file):
@@ -71,7 +91,6 @@ def process_image(file):
 def check_login(file):
     print(f"Received file: {file.filename}")
     username, _ = os.path.splitext(file.filename)
-    user_dir = os.path.join("face_data", username)
     file_bytes = np.frombuffer(file.read(), np.uint8)
     img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     return razpoznavanje.login(username, img)
@@ -149,7 +168,6 @@ def analyze_audio():
         print(f"[ERROR] {str(e)}")
         return jsonify({ "error": "Failed to analyze audio." }), 500
 
-# === New Route: Login Challenge ===
 @app.route('/login-challenge', methods=['POST'])
 def login_challenge():
     try:
@@ -173,9 +191,8 @@ def login_challenge():
 # === MQTT Subscriber Setup ===
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        #print(" Connected to MQTT broker.")
         client.subscribe("audio/decibel")
-        client.subscribe("presence/+")  # Wildcard for all presence messages
+        client.subscribe("presence/+")
     else:
         print(f" Failed to connect. Code: {rc}")
 
@@ -185,25 +202,17 @@ def on_message(client, userdata, msg):
     try:
         topic = msg.topic
         payload_raw = msg.payload.decode()
-        #print(" MQTT on_message triggered")
-        #print(f" Topic: {topic}")
-        #print(f" Payload: {payload_raw}")
 
-        # === Handle Presence Messages ===
         if topic.startswith("presence/"):
             user_id = topic.split("/")[1]
-
             if payload_raw == 'online':
                 active_subscribers.add(user_id)
-                #print(f" {user_id} is now online.")
             elif payload_raw == '':
                 active_subscribers.discard(user_id)
-                #print(f" {user_id} went offline.")
 
             print(f" Active subscribers: {len(active_subscribers)}")
             return
 
-        # === Handle Photo Updates ===
         payload = json.loads(payload_raw)
 
         if payload.get("status") == "offline":
@@ -218,19 +227,25 @@ def on_message(client, userdata, msg):
             print(" Incomplete data, skipping update.")
             return
 
-        url = f"http://{LOCAL_IP}:3001/photos/{photo_id}"
+        url = f"{BACKEND_URL}/photos/{photo_id}"
         data = {
             "db": db,
             "location": location
         }
 
         print(f" Updating photo: {url} with {data}")
-        response = requests.put(url, json=data)
 
-        if response.ok:
-            print(f" Photo {photo_id} updated successfully.")
-        else:
-            print(f" Failed to update photo. Status: {response.status_code}, Response: {response.text}")
+        try:
+            response = requests.put(url, json=data)
+
+            if response.ok:
+                print(f" ✅ Photo {photo_id} updated successfully.")
+            else:
+                print(f" ❌ Failed to update photo. Status: {response.status_code}, Response: {response.text}")
+
+        except Exception as e:
+            print(f" ❌ Exception during PUT to backend: {e}")
+            traceback.print_exc()
 
     except Exception as e:
         print(f" MQTT message handling error: {e}")
@@ -241,7 +256,9 @@ def run_mqtt_listener():
     client = mqtt_client.Client(client_id=MQTT_CLIENT_ID, transport="websockets")
     client.on_connect = on_connect
     client.on_message = on_message
+
     client.connect(MQTT_BROKER, MQTT_PORT)
+    print("✅ MQTT listener connected")
     client.loop_forever()
 
 # === Start MQTT Listener in Background ===
@@ -250,3 +267,4 @@ Thread(target=run_mqtt_listener, daemon=True).start()
 # === Start Flask ===
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+

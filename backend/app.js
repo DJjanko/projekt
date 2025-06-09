@@ -6,7 +6,7 @@ var logger = require('morgan');
 
 // vključimo mongoose in ga povežemo z MongoDB
 var mongoose = require('mongoose');
-var mongoDB = "mongodb://mongo:27017/vaja6";
+var mongoDB = "mongodb://localhost:27017/vaja6";
 mongoose.connect(mongoDB);
 mongoose.Promise = global.Promise;
 var db = mongoose.connection;
@@ -47,16 +47,10 @@ console.log("Running with IP:", LOCAL_IP);
 var cors = require('cors');
 var allowedOrigins = ['http://localhost:3000', 'http://localhost:3001','http://localhost:8081', `http://${LOCAL_IP}:8081`, `exp://${LOCAL_IP}:8081`];
 app.use(cors({
-    credentials: true,
-    origin: function(origin, callback){
-        // Allow requests with no origin (mobile apps, curl)
-        if(!origin) return callback(null, true);
-        if(allowedOrigins.indexOf(origin)===-1){
-            var msg = "The CORS policy does not allow access from the specified Origin.";
-            return callback(new Error(msg), false);
-        }
-        return callback(null, true);
-    }
+    origin: function (origin, callback) {
+        callback(null, true);
+    },
+    credentials: true
 }));
 
 // view engine setup
