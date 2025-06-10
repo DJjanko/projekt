@@ -64,7 +64,7 @@ You can restore the database locally using:
 ```bash
 mongorestore --db vaja6 dump/vaja6/
 
-🏃‍♂️ Getting Started
+🏃‍♂️ Getting Started (windows testing)
 1️⃣ Clone repository
 bash
 Kopiraj
@@ -117,6 +117,12 @@ Uredi
 cd backend
 npm test
 These tests are also run automatically via GitHub Actions on every push or pull request.
+
+(LINUX)
+download postavi_sistem.sh
+Make sure you have docker installed
+run the script: ./postavi_sistem.sh
+
 
 🌐 Live Features Overview
 Map View:
